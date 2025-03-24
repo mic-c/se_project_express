@@ -30,12 +30,6 @@ app.use((req, res, next) => {
 // Main router
 app.use("/", mainRouter);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send({ message: "An internal server error occurred" });
-});
-
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
