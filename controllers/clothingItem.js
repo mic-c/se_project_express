@@ -12,9 +12,8 @@ const getItems = (req, res) => {
   ClothingItem.find({})
     .then((items) => res.status(200).send(items))
     .catch((err) => {
-      res
-        .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error has occurred on the server" });
+      console.error(err);
+      res.status(500).send({ message: "An error occurred" });
     });
 };
 
@@ -65,6 +64,7 @@ const deleteItem = (req, res) => {
         .send({ message: "An error has occurred on the server" });
     });
 };
+const ClothingItem = require("../models/clothingItem");
 
 const updateLike = (req, res, method) => {
   const {
