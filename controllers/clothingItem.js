@@ -13,7 +13,9 @@ const getItems = (req, res) => {
     .then((items) => res.status(200).send(items))
     .catch((err) => {
       console.error(err);
-      res.status(500).send({ message: "An error occurred" });
+      res
+        .status(SERVER_ERROR_STATUS_CODE)
+        .send({ message: "An error occurred" });
     });
 };
 
@@ -22,47 +24,25 @@ const createItem = (req, res) => {
   const owner = req.user._id;
 
   ClothingItem.create({ name, weather, imageUrl, owner })
-    .then((item) => {
-      console.log(item);
-      res.status(201).send(item);
-    })
+    .then((item) => res.status(201).send(item))
     .catch((err) => {
       console.error(err);
-      if (err.name === "ValidationError") {
-        return res
-          .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: err.message });
-      }
-      return res
+      res
         .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error has occurred on the server" });
+        .send({ message: "An error occurred" });
     });
 };
 
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
+
   ClothingItem.findByIdAndDelete(itemId)
-    .orFail()
-    .then((item) => res.status(200).send(item));
-};
-const updateLike = (req, res, method) => {
-  const {
-    params: { itemId },
-  } = req;
-  console.log(itemId);
-  ClothingItem.findByIdAndUpdate(
-    itemId,
-    { [method]: { likes: req.user._id } },
-    { new: true }
-  )
     .orFail(() => {
-      const error = new Error("Item ID not found");
+      const error = new Error("Item not found");
       error.statusCode = NOT_FOUND_STATUS_CODE;
       throw error;
     })
-    .then((item) => {
-      res.send(item);
-    })
+    .then((item) => res.status(200).send(item))
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
