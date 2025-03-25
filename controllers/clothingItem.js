@@ -6,9 +6,6 @@ const {
 } = require("../utils/errors");
 
 const getItems = (req, res) => {
-  console.log(req);
-  console.log(req.body);
-
   ClothingItem.find({})
     .then((items) => res.status(200).send(items))
     .catch((err) => {
@@ -28,10 +25,10 @@ const createItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "ValidationError") {
-        // Handle Mongoose validation errors
+        const errorMessages = Object.values(err.errors).map((e) => e.message);
         res
           .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: "Invalid data provided" });
+          .send({ message: "Invalid data provided", errors: errorMessages });
       } else {
         res
           .status(SERVER_ERROR_STATUS_CODE)

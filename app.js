@@ -32,7 +32,9 @@ app.use("/", mainRouter);
 
 // Handle unknown routes
 app.use((req, res) => {
-  res.status(404).send({ message: "The requested resource was not found" });
+  res
+    .status(NOT_FOUND_STATUS_CODE)
+    .send({ message: "The requested resource was not found" });
 });
 
 // Start the server
