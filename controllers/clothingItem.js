@@ -27,9 +27,16 @@ const createItem = (req, res) => {
     .then((item) => res.status(201).send(item))
     .catch((err) => {
       console.error(err);
-      res
-        .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error occurred" });
+      if (err.name === "ValidationError") {
+        // Handle Mongoose validation errors
+        res
+          .status(BAD_REQUEST_STATUS_CODE)
+          .send({ message: "Invalid data provided" });
+      } else {
+        res
+          .status(SERVER_ERROR_STATUS_CODE)
+          .send({ message: "An error has occurred on the server" });
+      }
     });
 };
 
