@@ -35,12 +35,6 @@ app.use((req, res) => {
   res.status(404).send({ message: "The requested resource was not found" });
 });
 
-// Error-handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send({ message: "An internal server error occurred" });
-});
-
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
