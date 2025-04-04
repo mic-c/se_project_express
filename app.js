@@ -1,10 +1,15 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const mainRouter = require("./routes/index");
+const cors = require("cors");
+const { login, createUser } = require("./controllers/users");
+const authMiddleware = require("./.github/middlewares/auth");
+const mainRouter = require("./.github/routes/index");
 const { NOT_FOUND_STATUS_CODE } = require("./utils/errors");
 
 const { PORT = 3001 } = process.env;
 const app = express();
+
+app.use(cors());
 
 // Connect to MongoDB
 mongoose
@@ -14,21 +19,17 @@ mongoose
   })
   .catch((err) => {
     console.error("Failed to connect to MongoDB:", err.message);
-    process.exit(1); // Exit the process if the database connection fails
+    process.exit(1);
   });
 
 // Middleware to parse JSON
 app.use(express.json());
 
-// Middleware to mock user authentication
-app.use((req, res, next) => {
-  req.user = {
-    _id: "5d8b8592978f8bd833ca8133",
-  };
-  next();
-});
+// Routes for signing up and signing in
+app.post("/signup", createUser);
+app.post("/signin", login);
 
-// Main router
+// Use the main router for all other routes
 app.use("/", mainRouter);
 
 // Handle unknown routes
