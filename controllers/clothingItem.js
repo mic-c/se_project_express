@@ -2,6 +2,7 @@ const ClothingItem = require("../models/clothingItem");
 const {
   BAD_REQUEST_STATUS_CODE,
   NOT_FOUND_STATUS_CODE,
+  FORBIDDEN_STATUS_CODE,
   SERVER_ERROR_STATUS_CODE,
 } = require("../utils/errors");
 
@@ -39,27 +40,35 @@ const createItem = (req, res) => {
 
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
+  const userId = req.user._id;
 
-  ClothingItem.findByIdAndDelete(itemId)
-    .orFail(() => {
-      const error = new Error("Item not found");
-      error.statusCode = NOT_FOUND_STATUS_CODE;
-      throw error;
+  ClothingItem.findById(itemId)
+    .then((item) => {
+      if (!item) {
+        return res
+          .status(NOT_FOUND_STATUS_CODE)
+          .send({ message: "Item not found" });
+      }
+      if (item.owner.toString() !== userId) {
+        return res
+          .status(FORBIDDEN_STATUS_CODE)
+          .send({ message: "You do not have permission to delete this item" });
+      }
+
+      return ClothingItem.findByIdAndDelete(itemId).then(() =>
+        res.status(200).send({ message: "Item deleted successfully" })
+      );
     })
-    .then((item) => res.status(200).send(item))
     .catch((err) => {
-      console.error(err);
+      console.error("Error deleting item:", err);
       if (err.name === "CastError") {
-        res
+        return res
           .status(BAD_REQUEST_STATUS_CODE)
           .send({ message: "Invalid item ID" });
-      } else if (err.statusCode === NOT_FOUND_STATUS_CODE) {
-        res.status(NOT_FOUND_STATUS_CODE).send({ message: err.message });
-      } else {
-        res
-          .status(SERVER_ERROR_STATUS_CODE)
-          .send({ message: "An error has occurred on the server" });
       }
+      return res
+        .status(SERVER_ERROR_STATUS_CODE)
+        .send({ message: "An error occurred on the server" });
     });
 };
 

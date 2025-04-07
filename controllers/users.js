@@ -5,13 +5,15 @@ const ClothingItem = require("../models/clothingItem");
 const { JWT_SECRET } = require("../utils/config");
 const {
   BAD_REQUEST_STATUS_CODE,
+  CONFLICT_STATUS_CODE,
+  UNAUTHORIZED_STATUS_CODE,
   NOT_FOUND_STATUS_CODE,
   FORBIDDEN_STATUS_CODE,
   SERVER_ERROR_STATUS_CODE,
 } = require("../utils/errors");
 
 const getCurrentUser = (req, res) => {
-  const userId = req.user._id; // Get the user ID from req.user (set by authMiddleware)
+  const userId = req.user._id;
 
   User.findById(userId)
     .then((user) => {
@@ -20,11 +22,11 @@ const getCurrentUser = (req, res) => {
           .status(NOT_FOUND_STATUS_CODE)
           .send({ message: "User not found" });
       }
-      res.status(200).send(user);
+      return res.status(200).send(user);
     })
     .catch((err) => {
       console.error("Error fetching current user:", err);
-      res
+      return res
         .status(SERVER_ERROR_STATUS_CODE)
         .send({ message: "An error occurred on the server" });
     });
@@ -35,12 +37,14 @@ const createUser = (req, res) => {
 
   bcrypt
     .hash(password, 10)
-    .then((hashedPassword) => User.create({
+    .then((hashedPassword) =>
+      User.create({
         name,
         avatar,
         email,
         password: hashedPassword,
-      }))
+      })
+    )
     .then((user) => {
       const userWithoutPassword = { ...user.toObject() };
       delete userWithoutPassword.password;
@@ -49,11 +53,17 @@ const createUser = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.code === 11000) {
-        res.status(409).send({ message: "Email already exists" });
+        res
+          .status(CONFLICT_STATUS_CODE)
+          .send({ message: "Email already exists" });
       } else if (err.name === "ValidationError") {
-        res.status(400).send({ message: "Invalid data provided" });
+        res
+          .status(BAD_REQUEST_STATUS_CODE)
+          .send({ message: "Invalid data provided" });
       } else {
-        res.status(500).send({ message: "An error occurred on the server" });
+        res
+          .status(SERVER_ERROR_STATUS_CODE)
+          .send({ message: "An error occurred on the server" });
       }
     });
 };
@@ -92,6 +102,12 @@ const updateUser = (req, res) => {
 const login = (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res
+      .status(BAD_REQUEST_STATUS_CODE)
+      .send({ message: "Email and password are required" });
+  }
+
   User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
@@ -100,11 +116,19 @@ const login = (req, res) => {
 
       res.send({ token });
     })
-    .catch(() => {
-      res.status(401).send({ message: "Incorrect email or password" });
+    .catch((err) => {
+      if (err.message === "Incorrect email or password") {
+        return res
+          .status(UNAUTHORIZED_STATUS_CODE)
+          .send({ message: "Incorrect email or password" });
+      }
+
+      console.error("Error during login:", err);
+      res
+        .status(SERVER_ERROR_STATUS_CODE)
+        .send({ message: "An error occurred on the server" });
     });
 };
-
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
   const userId = req.user._id;
@@ -122,7 +146,6 @@ const deleteItem = (req, res) => {
           .send({ message: "You do not have permission to delete this item" });
       }
 
-      // If the user is the owner, delete the item
       return ClothingItem.findByIdAndDelete(itemId).then(() =>
         res.status(200).send({ message: "Item deleted successfully" })
       );
