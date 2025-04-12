@@ -2,8 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const { login, createUser } = require("./controllers/users");
-const mainRouter = require("./.github/routes/index");
-const authMiddleware = require("./.github/middlewares/auth"); // Import authMiddleware
+const authMiddleware = require("./middlewares/auth");
+const protectedRoutes = require("./routes/protected");
 const { NOT_FOUND_STATUS_CODE } = require("./utils/errors");
 
 const { PORT = 3001 } = process.env;
@@ -29,9 +29,9 @@ app.use(express.json());
 app.post("/signup", createUser);
 app.post("/signin", login);
 
-// Use the main router for all other routes
-app.use("/", mainRouter);
+// Protected routes
 app.use(authMiddleware);
+app.use("/protected", protectedRoutes);
 
 // Handle unknown routes
 app.use((req, res) => {

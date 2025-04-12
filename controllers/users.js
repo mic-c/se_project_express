@@ -1,14 +1,14 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
-const ClothingItem = require("../models/clothingItem");
+const ClothingItem = require("../models/ClothingItem");
 const { JWT_SECRET } = require("../utils/config");
 const {
   BAD_REQUEST_STATUS_CODE,
   CONFLICT_STATUS_CODE,
   UNAUTHORIZED_STATUS_CODE,
-  NOT_FOUND_STATUS_CODE,
   FORBIDDEN_STATUS_CODE,
+  NOT_FOUND_STATUS_CODE,
   SERVER_ERROR_STATUS_CODE,
 } = require("../utils/errors");
 
@@ -25,7 +25,7 @@ const getCurrentUser = (req, res) => {
       return res.status(200).send(user);
     })
     .catch((err) => {
-      console.error("Error fetching current user:", err);
+      console.error("Error fetching user:", err);
       return res
         .status(SERVER_ERROR_STATUS_CODE)
         .send({ message: "An error occurred on the server" });
@@ -72,35 +72,25 @@ const updateUser = (req, res) => {
   const { name, avatar } = req.body;
   const userId = req.user._id;
 
-  User.findByIdAndUpdate(
-    userId,
-    { name, avatar },
-    { new: true, runValidators: true }
-  )
+  User.findById(userId)
     .then((user) => {
       if (!user) {
         return res
           .status(NOT_FOUND_STATUS_CODE)
           .send({ message: "User not found" });
       }
-      res.status(200).send(user);
+      return res.status(200).send(user);
     })
     .catch((err) => {
-      console.error("Error updating user:", err);
-      if (err.name === "ValidationError") {
-        res
-          .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: "Invalid data provided" });
-      } else {
-        res
-          .status(SERVER_ERROR_STATUS_CODE)
-          .send({ message: "An error occurred on the server" });
-      }
+      console.error("Error fetching user:", err);
+      return res
+        .status(SERVER_ERROR_STATUS_CODE)
+        .send({ message: "An error occurred on the server" });
     });
 };
 
 const login = (req, res) => {
-  const { email, password } = req.body;
+  const { name, avatar, email, password } = req.body;
 
   if (!email || !password) {
     return res
@@ -113,7 +103,6 @@ const login = (req, res) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
         expiresIn: "7d",
       });
-
       res.send({ token });
     })
     .catch((err) => {
@@ -129,6 +118,7 @@ const login = (req, res) => {
         .send({ message: "An error occurred on the server" });
     });
 };
+
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
   const userId = req.user._id;

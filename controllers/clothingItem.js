@@ -1,4 +1,4 @@
-const ClothingItem = require("../models/clothingItem");
+const ClothingItem = require("../models/ClothingItem");
 const {
   BAD_REQUEST_STATUS_CODE,
   NOT_FOUND_STATUS_CODE,
@@ -10,31 +10,23 @@ const getItems = (req, res) => {
   ClothingItem.find({})
     .then((items) => res.status(200).send(items))
     .catch((err) => {
-      console.error(err);
+      console.error("Error fetching items:", err);
       res
         .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error occurred" });
+        .send({ message: "An error occurred on the server" });
     });
 };
 
 const createItem = (req, res) => {
-  const { name, weather, imageUrl } = req.body;
-  const owner = req.user._id;
+  const { name, weather, imageUrl, owner } = req.body;
 
   ClothingItem.create({ name, weather, imageUrl, owner })
     .then((item) => res.status(201).send(item))
     .catch((err) => {
-      console.error(err);
-      if (err.name === "ValidationError") {
-        const errorMessages = Object.values(err.errors).map((e) => e.message);
-        res
-          .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: "Invalid data provided", errors: errorMessages });
-      } else {
-        res
-          .status(SERVER_ERROR_STATUS_CODE)
-          .send({ message: "An error has occurred on the server" });
-      }
+      console.error("Error creating item:", err);
+      res
+        .status(BAD_REQUEST_STATUS_CODE)
+        .send({ message: "Invalid data provided" });
     });
 };
 
@@ -72,42 +64,44 @@ const deleteItem = (req, res) => {
     });
 };
 
-const updateLike = (req, res, method) => {
+const likeItem = (req, res) => {
   const { itemId } = req.params;
 
-  ClothingItem.findByIdAndUpdate(
-    itemId,
-    { [method]: { likes: req.user._id } },
-    { new: true }
-  )
-    .orFail(() => {
-      const error = new Error("Item not found");
-      error.statusCode = NOT_FOUND_STATUS_CODE;
-      throw error;
-    })
-    .then((item) => res.status(200).send(item))
-    .catch((err) => {
-      console.error(err);
-      if (err.name === "CastError") {
-        res
-          .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: "Invalid item ID" });
-      } else if (err.statusCode === NOT_FOUND_STATUS_CODE) {
-        res.status(NOT_FOUND_STATUS_CODE).send({ message: err.message });
-      } else {
-        res
-          .status(SERVER_ERROR_STATUS_CODE)
-          .send({ message: "An error has occurred on the server" });
+  ClothingItem.findById(itemId)
+    .then((item) => {
+      if (!item) {
+        return res
+          .status(NOT_FOUND_STATUS_CODE)
+          .send({ message: "Item not found" });
       }
+      return res.status(200).send(item); // Ensure a value is returned
+    })
+    .catch((err) => {
+      console.error("Error fetching item:", err);
+      return res
+        .status(SERVER_ERROR_STATUS_CODE)
+        .send({ message: "An error occurred on the server" });
     });
 };
 
-const likeItem = (req, res) => {
-  updateLike(req, res, "$addToSet");
-};
-
 const dislikeItem = (req, res) => {
-  updateLike(req, res, "$pull");
+  const { itemId } = req.params;
+
+  ClothingItem.findById(itemId)
+    .then((item) => {
+      if (!item) {
+        return res
+          .status(NOT_FOUND_STATUS_CODE)
+          .send({ message: "Item not found" });
+      }
+      return res.status(200).send(item); // Ensure a value is returned
+    })
+    .catch((err) => {
+      console.error("Error fetching item:", err);
+      return res
+        .status(SERVER_ERROR_STATUS_CODE)
+        .send({ message: "An error occurred on the server" });
+    });
 };
 
 module.exports = {

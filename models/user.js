@@ -43,9 +43,9 @@ userSchema.pre("save", async function hashPassword(next) {
   }
   try {
     this.password = await bcrypt.hash(this.password, 10);
-    next();
+    return next();
   } catch (err) {
-    next(err);
+    return next(err);
   }
 });
 
