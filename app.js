@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const { login, createUser } = require("./controllers/users");
 const authMiddleware = require("./middlewares/auth");
-const protectedRoutes = require("./routes/protected");
 const { NOT_FOUND_STATUS_CODE } = require("./utils/errors");
 
 const { PORT = 3001 } = process.env;
@@ -31,7 +30,6 @@ app.post("/signin", login);
 
 // Protected routes
 app.use(authMiddleware);
-app.use("/protected", protectedRoutes);
 
 // Handle unknown routes
 app.use((req, res) => {

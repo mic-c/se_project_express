@@ -1,4 +1,4 @@
-const ClothingItem = require("../models/ClothingItem");
+const ClothingItem = require("../models/clothingItem");
 const {
   BAD_REQUEST_STATUS_CODE,
   NOT_FOUND_STATUS_CODE,
@@ -18,15 +18,21 @@ const getItems = (req, res) => {
 };
 
 const createItem = (req, res) => {
-  const { name, weather, imageUrl, owner } = req.body;
+  const { name, weather, imageUrl } = req.body;
+  const owner = req.user._id;
 
   ClothingItem.create({ name, weather, imageUrl, owner })
     .then((item) => res.status(201).send(item))
     .catch((err) => {
       console.error("Error creating item:", err);
-      res
-        .status(BAD_REQUEST_STATUS_CODE)
-        .send({ message: "Invalid data provided" });
+      if (err.name === "ValidationError") {
+        return res
+          .status(BAD_REQUEST_STATUS_CODE)
+          .send({ message: "Invalid data provided" });
+      }
+      return res
+        .status(SERVER_ERROR_STATUS_CODE)
+        .send({ message: "An error occurred on the server" });
     });
 };
 
@@ -67,17 +73,26 @@ const deleteItem = (req, res) => {
 const likeItem = (req, res) => {
   const { itemId } = req.params;
 
-  ClothingItem.findById(itemId)
+  ClothingItem.findByIdAndUpdate(
+    itemId,
+    { $addToSet: { likes: req.user._id } },
+    { new: true }
+  )
     .then((item) => {
       if (!item) {
         return res
           .status(NOT_FOUND_STATUS_CODE)
           .send({ message: "Item not found" });
       }
-      return res.status(200).send(item); // Ensure a value is returned
+      return res.status(200).send(item);
     })
     .catch((err) => {
-      console.error("Error fetching item:", err);
+      console.error("Error liking item:", err);
+      if (err.name === "CastError") {
+        return res
+          .status(BAD_REQUEST_STATUS_CODE)
+          .send({ message: "Invalid item ID" });
+      }
       return res
         .status(SERVER_ERROR_STATUS_CODE)
         .send({ message: "An error occurred on the server" });
@@ -87,17 +102,26 @@ const likeItem = (req, res) => {
 const dislikeItem = (req, res) => {
   const { itemId } = req.params;
 
-  ClothingItem.findById(itemId)
+  ClothingItem.findByIdAndUpdate(
+    itemId,
+    { $pull: { likes: req.user._id } },
+    { new: true }
+  )
     .then((item) => {
       if (!item) {
         return res
           .status(NOT_FOUND_STATUS_CODE)
           .send({ message: "Item not found" });
       }
-      return res.status(200).send(item); // Ensure a value is returned
+      return res.status(200).send(item);
     })
     .catch((err) => {
-      console.error("Error fetching item:", err);
+      console.error("Error disliking item:", err);
+      if (err.name === "CastError") {
+        return res
+          .status(BAD_REQUEST_STATUS_CODE)
+          .send({ message: "Invalid item ID" });
+      }
       return res
         .status(SERVER_ERROR_STATUS_CODE)
         .send({ message: "An error occurred on the server" });

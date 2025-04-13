@@ -37,16 +37,25 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.pre("save", async function hashPassword(next) {
-  if (!this.isModified("password")) {
-    return next();
-  }
-  try {
-    this.password = await bcrypt.hash(this.password, 10);
-    return next();
-  } catch (err) {
-    return next(err);
-  }
-});
+userSchema.statics.findUserByCredentials = function findUserByCredentials(
+  email,
+  password
+) {
+  return this.findOne({ email })
+    .select("+password")
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(new Error("Incorrect email or password"));
+      }
+
+      return bcrypt.compare(password, user.password).then((matched) => {
+        if (!matched) {
+          return Promise.reject(new Error("Incorrect email or password"));
+        }
+
+        return user;
+      });
+    });
+};
 
 module.exports = mongoose.model("User", userSchema);

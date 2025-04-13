@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
-const ClothingItem = require("../models/ClothingItem");
+const ClothingItem = require("../models/clothingItem");
 const { JWT_SECRET } = require("../utils/config");
 const {
   BAD_REQUEST_STATUS_CODE,
@@ -72,7 +72,11 @@ const updateUser = (req, res) => {
   const { name, avatar } = req.body;
   const userId = req.user._id;
 
-  User.findById(userId)
+  User.findByIdAndUpdate(
+    userId,
+    { name, avatar },
+    { new: true, runValidators: true }
+  )
     .then((user) => {
       if (!user) {
         return res
@@ -82,7 +86,12 @@ const updateUser = (req, res) => {
       return res.status(200).send(user);
     })
     .catch((err) => {
-      console.error("Error fetching user:", err);
+      console.error("Error updating user:", err);
+      if (err.name === "ValidationError") {
+        return res
+          .status(BAD_REQUEST_STATUS_CODE)
+          .send({ message: "Invalid data provided" });
+      }
       return res
         .status(SERVER_ERROR_STATUS_CODE)
         .send({ message: "An error occurred on the server" });
@@ -90,7 +99,7 @@ const updateUser = (req, res) => {
 };
 
 const login = (req, res) => {
-  const { name, avatar, email, password } = req.body;
+  const { email, password } = req.body;
 
   if (!email || !password) {
     return res

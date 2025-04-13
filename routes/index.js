@@ -1,13 +1,10 @@
 const express = require("express");
-const userRoutes = require("./users");
-const clothingItemRoutes = require("./clothingItems");
+const usersRoutes = require("./users");
+const itemsRoutes = require("./clothingItem");
 
 const router = express.Router();
 
-// Use the user routes
-router.use("/users", userRoutes);
-
-// Use the clothing item routes
-router.use("/items", clothingItemRoutes);
+router.use("/users", usersRoutes);
+router.use("/items", itemsRoutes);
 
 module.exports = router;
