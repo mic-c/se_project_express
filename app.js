@@ -2,13 +2,15 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const { login, createUser } = require("./controllers/users");
-const authMiddleware = require("./middlewares/auth");
+const usersRoutes = require("./routes/users");
+const clothingItemsRoutes = require("./routes/clothingItem");
 const { NOT_FOUND_STATUS_CODE } = require("./utils/errors");
 
 const { PORT = 3001 } = process.env;
 const app = express();
 
 app.use(cors());
+app.use(express.json());
 
 // Connect to MongoDB
 mongoose
@@ -21,15 +23,13 @@ mongoose
     process.exit(1);
   });
 
-// Middleware to parse JSON
-app.use(express.json());
-
-// Routes for signing up and signing in
-app.post("/signup", createUser);
+// Public routes
 app.post("/signin", login);
+app.post("/signup", createUser);
 
-// Protected routes
-app.use(authMiddleware);
+// Routes
+app.use("/users", usersRoutes);
+app.use("/items", clothingItemsRoutes);
 
 // Handle unknown routes
 app.use((req, res) => {
