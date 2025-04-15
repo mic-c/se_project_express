@@ -68,36 +68,6 @@ const createUser = (req, res) => {
     });
 };
 
-const updateUser = (req, res) => {
-  const { name, avatar } = req.body;
-  const userId = req.user._id;
-
-  User.findByIdAndUpdate(
-    userId,
-    { name, avatar },
-    { new: true, runValidators: true }
-  )
-    .then((user) => {
-      if (!user) {
-        return res
-          .status(NOT_FOUND_STATUS_CODE)
-          .send({ message: "User not found" });
-      }
-      return res.status(200).send(user);
-    })
-    .catch((err) => {
-      console.error("Error updating user:", err);
-      if (err.name === "ValidationError") {
-        return res
-          .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: "Invalid data provided" });
-      }
-      return res
-        .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error occurred on the server" });
-    });
-};
-
 const login = (req, res) => {
   const { email, password } = req.body;
 
@@ -112,7 +82,7 @@ const login = (req, res) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
         expiresIn: "7d",
       });
-      res.send({ token });
+      return res.send({ token });
     })
     .catch((err) => {
       if (err.message === "Incorrect email or password") {
@@ -122,9 +92,29 @@ const login = (req, res) => {
       }
 
       console.error("Error during login:", err);
-      res
+      return res
         .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error occurred on the server" });
+        .send({ message: "An error occurred on the server" }); // Ensure a value is returned
+    });
+};
+
+const updateUser = (req, res) => {
+  const userId = req.user._id;
+
+  User.findById(userId)
+    .then((user) => {
+      if (!user) {
+        return res
+          .status(NOT_FOUND_STATUS_CODE)
+          .send({ message: "User not found" });
+      }
+      return res.status(200).send(user);
+    })
+    .catch((err) => {
+      console.error("Error fetching user:", err);
+      return res
+        .status(SERVER_ERROR_STATUS_CODE)
+        .send({ message: "An error occurred on the server" }); // Ensure a value is returned
     });
 };
 
