@@ -1,13 +1,11 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
-const ClothingItem = require("../models/clothingItem");
 const { JWT_SECRET } = require("../utils/config");
 const {
   BAD_REQUEST_STATUS_CODE,
   CONFLICT_STATUS_CODE,
   UNAUTHORIZED_STATUS_CODE,
-  FORBIDDEN_STATUS_CODE,
   NOT_FOUND_STATUS_CODE,
   SERVER_ERROR_STATUS_CODE,
 } = require("../utils/errors");
@@ -100,8 +98,12 @@ const login = (req, res) => {
 
 const updateUser = (req, res) => {
   const userId = req.user._id;
-
-  User.findById(userId)
+  const { name, avatar } = req.body;
+  User.findByIdAndUpdate(
+    userId,
+    { name, avatar },
+    { new: true, runValidators: true }
+  )
     .then((user) => {
       if (!user) {
         return res
@@ -111,40 +113,11 @@ const updateUser = (req, res) => {
       return res.status(200).send(user);
     })
     .catch((err) => {
-      console.error("Error fetching user:", err);
-      return res
-        .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error occurred on the server" }); // Ensure a value is returned
-    });
-};
-
-const deleteItem = (req, res) => {
-  const { itemId } = req.params;
-  const userId = req.user._id;
-
-  ClothingItem.findById(itemId)
-    .then((item) => {
-      if (!item) {
-        return res
-          .status(NOT_FOUND_STATUS_CODE)
-          .send({ message: "Item not found" });
-      }
-      if (item.owner.toString() !== userId) {
-        return res
-          .status(FORBIDDEN_STATUS_CODE)
-          .send({ message: "You do not have permission to delete this item" });
-      }
-
-      return ClothingItem.findByIdAndDelete(itemId).then(() =>
-        res.status(200).send({ message: "Item deleted successfully" })
-      );
-    })
-    .catch((err) => {
-      console.error("Error deleting item:", err);
-      if (err.name === "CastError") {
+      console.error("Error updating user:", err);
+      if (err.name === "ValidationError") {
         return res
           .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: "Invalid item ID" });
+          .send({ message: "Invalid data provided" });
       }
       return res
         .status(SERVER_ERROR_STATUS_CODE)
@@ -157,5 +130,4 @@ module.exports = {
   login,
   getCurrentUser,
   updateUser,
-  deleteItem,
 };
