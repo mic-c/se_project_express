@@ -34,7 +34,11 @@ const createItem = (req, res) => {
 const likeItem = (req, res) => {
   const { itemId } = req.params;
 
-  ClothingItem.findByIdAndUpdate(itemId)
+  ClothingItem.findByIdAndUpdate(
+    itemId,
+    { $addToSet: { likes: req.user._id } },
+    { new: true }
+  )
     .then((item) => {
       if (!item) {
         return res
@@ -44,7 +48,12 @@ const likeItem = (req, res) => {
       return res.status(200).send(item);
     })
     .catch((err) => {
-      console.error("Error fetching item:", err);
+      console.error("Error adding like:", err);
+      if (err.name === "CastError") {
+        return res
+          .status(BAD_REQUEST_STATUS_CODE)
+          .send({ message: "Invalid item ID" });
+      }
       return res
         .status(SERVER_ERROR_STATUS_CODE)
         .send({ message: "An error occurred on the server" });
@@ -54,7 +63,11 @@ const likeItem = (req, res) => {
 const dislikeItem = (req, res) => {
   const { itemId } = req.params;
 
-  ClothingItem.findByIdAndUpdate(itemId)
+  ClothingItem.findByIdAndUpdate(
+    itemId,
+    { $pull: { likes: req.user._id } },
+    { new: true }
+  )
     .then((item) => {
       if (!item) {
         return res
@@ -64,7 +77,12 @@ const dislikeItem = (req, res) => {
       return res.status(200).send(item);
     })
     .catch((err) => {
-      console.error("Error fetching item:", err);
+      console.error("Error removing like:", err);
+      if (err.name === "CastError") {
+        return res
+          .status(BAD_REQUEST_STATUS_CODE)
+          .send({ message: "Invalid item ID" });
+      }
       return res
         .status(SERVER_ERROR_STATUS_CODE)
         .send({ message: "An error occurred on the server" });
