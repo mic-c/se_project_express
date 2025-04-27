@@ -23,6 +23,18 @@ mongoose
     process.exit(1);
   });
 
+// Mock user middleware (for testing purposes)
+app.use((req, res, next) => {
+  req.user = {
+    _id: "5d8b8592978f8bd833ca8133",
+  };
+  next();
+});
+
+// Routes
+app.use("/users", usersRoutes);
+app.use("/items", clothingItemRoutes);
+
 // Public routes
 app.post("/signin", login);
 app.post("/signup", createUser);
