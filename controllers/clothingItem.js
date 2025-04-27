@@ -11,7 +11,9 @@ const getItems = (req, res) => {
     .then((items) => res.status(200).send(items))
     .catch((err) => {
       console.error("Error fetching items:", err);
-      res.status(500).send({ message: "An error occurred on the server" });
+      res
+        .status(SERVER_ERROR_STATUS_CODE)
+        .send({ message: "An error occurred on the server" });
     });
 };
 
@@ -23,14 +25,16 @@ const createItem = (req, res) => {
     .then((item) => res.status(201).send(item))
     .catch((err) => {
       console.error("Error creating item:", err);
-      res.status(400).send({ message: "Invalid data provided" });
+      res
+        .status(BAD_REQUEST_STATUS_CODE)
+        .send({ message: "Invalid data provided" });
     });
 };
 
 const likeItem = (req, res) => {
   const { itemId } = req.params;
 
-  ClothingItem.findById(itemId)
+  ClothingItem.findByIdAndUpdate(itemId)
     .then((item) => {
       if (!item) {
         return res
@@ -50,7 +54,7 @@ const likeItem = (req, res) => {
 const dislikeItem = (req, res) => {
   const { itemId } = req.params;
 
-  ClothingItem.findById(itemId)
+  ClothingItem.findByIdAndUpdate(itemId)
     .then((item) => {
       if (!item) {
         return res
