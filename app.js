@@ -1,6 +1,10 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const { celebrate, Joi, errors } = require("celebrate");
+const { requestLogger, errorLogger } = require("./middlewares/logger");
+const errorHandler = require("./utils/errorHandler");
 const { login, createUser } = require("./controllers/users");
 const usersRoutes = require("./routes/users");
 const clothingItemRoutes = require("./routes/clothingItem");
@@ -23,6 +27,9 @@ mongoose
     process.exit(1);
   });
 
+// Request logger
+app.use(requestLogger);
+
 // Mock user middleware (for testing purposes)
 app.use((req, res, next) => {
   req.user = {
@@ -31,15 +38,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
-app.use("/users", usersRoutes);
-app.use("/items", clothingItemRoutes);
-
 // Public routes
 app.post("/signin", login);
-app.post("/signup", createUser);
+app.post(
+  "/signup",
+  celebrate({
+    body: Joi.object().keys({
+      email: Joi.string().email().required(),
+      password: Joi.string().required(),
+    }),
+  }),
+  createUser
+);
 
-// Routes
+// Main routes
 app.use("/users", usersRoutes);
 app.use("/items", clothingItemRoutes);
 
@@ -50,7 +62,16 @@ app.use((req, res) => {
     .send({ message: "The requested resource was not found" });
 });
 
+// Error logger
+app.use(errorLogger);
+
+// Celebrate error handler
+app.use(errors());
+
+// Centralized error handler
+app.use(errorHandler);
+
 // Start the server
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on port ${PORT}`);
 });
