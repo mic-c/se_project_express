@@ -14,6 +14,18 @@ module.exports = {
         sourceType: "script",
       },
     },
+    {
+      files: ["utils/utils/customErrors.js"],
+      rules: {
+        "max-classes-per-file": "off",
+      },
+    },
+    {
+      files: ["utils/errorHandler.js"],
+      rules: {
+        "no-unused-vars": ["error", { argsIgnorePattern: "^next$" }],
+      },
+    },
   ],
   parserOptions: {
     ecmaVersion: "latest",
