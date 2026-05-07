@@ -23,17 +23,20 @@ The **WTWR** back-end project is focused on creating a server for the WTWR appli
 ## Installation
 
 1. Clone this repository:
+
    ```bash
    git clone https://github.com/mic-c/se_project_express.git
    cd se_project_express
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Create a `.env` file in the root directory:
+
    ```
    NODE_ENV=development
    JWT_SECRET=your-secret-key-here
