@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const { celebrate, Joi, errors } = require("celebrate");
+const validator = require("validator");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
 const errorHandler = require("./utils/errorHandler");
 const { login, createUser } = require("./controllers/users");
@@ -38,14 +39,50 @@ app.use((req, res, next) => {
   next();
 });
 
+// Custom URL validator
+const validateURL = (value, helpers) => {
+  if (validator.isURL(value)) {
+    return value;
+  }
+  return helpers.error("string.uri");
+};
+
 // Public routes
-app.post("/signin", login);
+app.post(
+  "/signin",
+  celebrate({
+    body: Joi.object().keys({
+      email: Joi.string().email().required().messages({
+        "string.email": 'The "email" field must be a valid email',
+        "string.empty": 'The "email" field must be filled in',
+      }),
+      password: Joi.string().required().messages({
+        "string.empty": 'The "password" field must be filled in',
+      }),
+    }),
+  }),
+  login
+);
+
 app.post(
   "/signup",
   celebrate({
     body: Joi.object().keys({
-      email: Joi.string().email().required(),
-      password: Joi.string().required(),
+      email: Joi.string().email().required().messages({
+        "string.email": 'The "email" field must be a valid email',
+        "string.empty": 'The "email" field must be filled in',
+      }),
+      password: Joi.string().required().messages({
+        "string.empty": 'The "password" field must be filled in',
+      }),
+      name: Joi.string().min(2).max(30).required().messages({
+        "string.min": 'The minimum length of the "name" field is 2',
+        "string.max": 'The maximum length of the "name" field is 30',
+        "string.empty": 'The "name" field must be filled in',
+      }),
+      avatar: Joi.string().custom(validateURL).messages({
+        "string.uri": 'The "avatar" field must be a valid URL',
+      }),
     }),
   }),
   createUser
