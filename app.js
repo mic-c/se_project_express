@@ -6,8 +6,7 @@ const { celebrate, errors } = require("celebrate");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
 const errorHandler = require("./utils/errorHandler");
 const { login, createUser } = require("./controllers/users");
-const usersRoutes = require("./routes/users");
-const clothingItemRoutes = require("./routes/clothingItem");
+const routes = require("./routes");
 const NotFoundError = require("./errors/NotFoundError");
 const { validateSignIn, validateSignUp } = require("./middlewares/validation");
 
@@ -44,8 +43,7 @@ app.post("/signin", celebrate(validateSignIn), login);
 app.post("/signup", celebrate(validateSignUp), createUser);
 
 // Main routes
-app.use("/users", usersRoutes);
-app.use("/items", clothingItemRoutes);
+app.use(routes);
 
 // Handle unknown routes
 app.use((req, res, next) => {
