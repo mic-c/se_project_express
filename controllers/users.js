@@ -2,35 +2,25 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const { JWT_SECRET } = require("../utils/config");
-const {
-  BAD_REQUEST_STATUS_CODE,
-  CONFLICT_STATUS_CODE,
-  UNAUTHORIZED_STATUS_CODE,
-  NOT_FOUND_STATUS_CODE,
-  SERVER_ERROR_STATUS_CODE,
-} = require("../utils/errors");
+const BadRequestError = require("../errors/BadRequestError");
+const UnauthorizedError = require("../errors/UnauthorizedError");
+const NotFoundError = require("../errors/NotFoundError");
+const ConflictError = require("../errors/ConflictError");
 
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   const userId = req.user._id;
 
   User.findById(userId)
     .then((user) => {
       if (!user) {
-        return res
-          .status(NOT_FOUND_STATUS_CODE)
-          .send({ message: "User not found" });
+        throw new NotFoundError("User not found");
       }
       return res.status(200).send(user);
     })
-    .catch((err) => {
-      console.error("Error fetching user:", err);
-      return res
-        .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error occurred on the server" });
-    });
+    .catch(next);
 };
 
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const { name, avatar, email, password } = req.body;
 
   bcrypt
@@ -49,34 +39,24 @@ const createUser = (req, res) => {
       res.status(201).send(userWithoutPassword);
     })
     .catch((err) => {
-      console.error(err);
       if (err.code === 11000) {
-        res
-          .status(CONFLICT_STATUS_CODE)
-          .send({ message: "Email already exists" });
+        next(new ConflictError("Email already exists"));
       } else if (err.name === "ValidationError") {
-        res
-          .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: "Invalid data provided" });
+        next(new BadRequestError("Invalid data provided"));
       } else {
-        res
-          .status(SERVER_ERROR_STATUS_CODE)
-          .send({ message: "An error occurred on the server" });
+        next(err);
       }
     });
 };
 
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res
-      .status(BAD_REQUEST_STATUS_CODE)
-      .send({ message: "Email and password are required" });
+    throw new BadRequestError("Email and password are required");
   }
 
   return User.findUserByCredentials(email, password)
-
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
         expiresIn: "7d",
@@ -85,21 +65,17 @@ const login = (req, res) => {
     })
     .catch((err) => {
       if (err.message === "Incorrect email or password") {
-        return res
-          .status(UNAUTHORIZED_STATUS_CODE)
-          .send({ message: "Incorrect email or password" });
+        next(new UnauthorizedError("Incorrect email or password"));
+      } else {
+        next(err);
       }
-
-      console.error("Error during login:", err);
-      return res
-        .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error occurred on the server" }); // Ensure a value is returned
     });
 };
 
-const updateUser = (req, res) => {
+const updateUser = (req, res, next) => {
   const userId = req.user._id;
   const { name, avatar } = req.body;
+
   User.findByIdAndUpdate(
     userId,
     { name, avatar },
@@ -107,22 +83,16 @@ const updateUser = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        return res
-          .status(NOT_FOUND_STATUS_CODE)
-          .send({ message: "User not found" });
+        throw new NotFoundError("User not found");
       }
       return res.status(200).send(user);
     })
     .catch((err) => {
-      console.error("Error updating user:", err);
       if (err.name === "ValidationError") {
-        return res
-          .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: "Invalid data provided" });
+        next(new BadRequestError("Invalid data provided"));
+      } else {
+        next(err);
       }
-      return res
-        .status(SERVER_ERROR_STATUS_CODE)
-        .send({ message: "An error occurred on the server" });
     });
 };
 

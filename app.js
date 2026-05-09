@@ -8,7 +8,7 @@ const errorHandler = require("./utils/errorHandler");
 const { login, createUser } = require("./controllers/users");
 const usersRoutes = require("./routes/users");
 const clothingItemRoutes = require("./routes/clothingItem");
-const { NOT_FOUND_STATUS_CODE } = require("./utils/errors");
+const NotFoundError = require("./errors/NotFoundError");
 
 const { PORT = 3001 } = process.env;
 const app = express();
@@ -56,10 +56,8 @@ app.use("/users", usersRoutes);
 app.use("/items", clothingItemRoutes);
 
 // Handle unknown routes
-app.use((req, res) => {
-  res
-    .status(NOT_FOUND_STATUS_CODE)
-    .send({ message: "The requested resource was not found" });
+app.use((req, res, next) => {
+  next(new NotFoundError("The requested resource was not found"));
 });
 
 // Error logger
