@@ -1,4 +1,4 @@
-const { Joi } = require("celebrate");
+const { celebrate, Joi } = require("celebrate");
 const validator = require("validator");
 
 // Custom URL validator
@@ -10,7 +10,7 @@ const validateURL = (value, helpers) => {
 };
 
 // Auth validation schemas
-const validateSignIn = {
+const validateSignIn = celebrate({
   body: Joi.object().keys({
     email: Joi.string().email().required().messages({
       "string.email": 'The "email" field must be a valid email',
@@ -20,9 +20,9 @@ const validateSignIn = {
       "string.empty": 'The "password" field must be filled in',
     }),
   }),
-};
+});
 
-const validateSignUp = {
+const validateSignUp = celebrate({
   body: Joi.object().keys({
     email: Joi.string().email().required().messages({
       "string.email": 'The "email" field must be a valid email',
@@ -40,10 +40,10 @@ const validateSignUp = {
       "string.uri": 'The "avatar" field must be a valid URL',
     }),
   }),
-};
+});
 
 // User validation schemas
-const validateUpdateUser = {
+const validateUpdateUser = celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30).messages({
       "string.min": 'The minimum length of the "name" field is 2',
@@ -53,10 +53,10 @@ const validateUpdateUser = {
       "string.uri": 'The "avatar" field must be a valid URL',
     }),
   }),
-};
+});
 
 // Clothing item validation schemas
-const validateCreateItem = {
+const validateCreateItem = celebrate({
   body: Joi.object().keys({
     name: Joi.string().required().min(2).max(30).messages({
       "string.min": 'The minimum length of the "name" field is 2',
@@ -72,16 +72,16 @@ const validateCreateItem = {
       "any.only": 'The "weather" field must be one of: hot, warm, cold',
     }),
   }),
-};
+});
 
-const validateItemId = {
+const validateItemId = celebrate({
   params: Joi.object().keys({
     itemId: Joi.string().hex().length(24).messages({
       "string.hex": 'The "itemId" must be a valid hex string',
       "string.length": 'The "itemId" must be 24 characters long',
     }),
   }),
-};
+});
 
 module.exports = {
   validateSignIn,

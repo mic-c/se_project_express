@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const { celebrate, errors } = require("celebrate");
+const { errors } = require("celebrate");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
 const errorHandler = require("./utils/errorHandler");
 const { login, createUser } = require("./controllers/users");
@@ -39,8 +39,8 @@ app.use((req, res, next) => {
 });
 
 // Public routes
-app.post("/signin", celebrate(validateSignIn), login);
-app.post("/signup", celebrate(validateSignUp), createUser);
+app.post("/signin", validateSignIn, login);
+app.post("/signup", validateSignUp, createUser);
 
 // Main routes
 app.use(routes);

@@ -1,5 +1,4 @@
 const express = require("express");
-const { celebrate } = require("celebrate");
 const {
   getItems,
   createItem,
@@ -16,9 +15,9 @@ const router = express.Router();
 router.get("/", getItems);
 
 // Protected routes (require authorization)
-router.post("/", authMiddleware, celebrate(validateCreateItem), createItem);
-router.put("/:itemId/likes", authMiddleware, celebrate(validateItemId), likeItem);
-router.delete("/:itemId/likes", authMiddleware, celebrate(validateItemId), dislikeItem);
-router.delete("/:itemId", authMiddleware, celebrate(validateItemId), deleteItem);
+router.post("/", authMiddleware, validateCreateItem, createItem);
+router.put("/:itemId/likes", authMiddleware, validateItemId, likeItem);
+router.delete("/:itemId/likes", authMiddleware, validateItemId, dislikeItem);
+router.delete("/:itemId", authMiddleware, validateItemId, deleteItem);
 
 module.exports = router;
